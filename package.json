@@ -6,7 +6,7 @@
   "version": "0.0.8",
   "repository": {
     "type": "git",
-    "url": "https://github.com/dgnx-christian-esperar/vscode-sidebar-resize-half"
+    "url": "https://github.com/christianesperar/vscode-sidebar-resize-half"
   },
   "license": "MIT",
   "engines": {
