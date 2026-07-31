@@ -1,7 +1,7 @@
 {
   "name": "vscode-sidebar-resize-half",
   "displayName": "Sidebar Resize Half",
-  "description": "Toggle the primary sidebar between a wide and compact width while keeping the editor wider.",
+  "description": "Toggle the primary sidebar wide for AI chat panels like Copilot Chat, or compact to give the editor more room.",
   "publisher": "local",
   "version": "0.0.8",
   "repository": {

@@ -2,6 +2,10 @@
 
 Toggle VS Code's primary sidebar between a wide and compact width while keeping the editor wider.
 
+## Motivation
+
+AI chat panels — like Copilot Chat, GitHub Copilot, and other LLM-powered assistants — live in the primary sidebar and benefit from extra screen real estate. This extension makes it easy to toggle the sidebar wide so the AI chat gets a good portion of the screen, then toggle it back to a compact size when you want more room for your code. One shortcut, no manual dragging.
+
 ## Usage
 
 Run **Sidebar: Toggle Primary Sidebar Half Width** from the Command Palette, or use:
