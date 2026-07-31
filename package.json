@@ -1,0 +1,98 @@
+{
+  "name": "vscode-sidebar-resize-half",
+  "displayName": "Sidebar Resize Half",
+  "description": "Toggle the primary sidebar between a wide and compact width while keeping the editor wider.",
+  "publisher": "local",
+  "version": "0.0.8",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dgnx-christian-esperar/vscode-sidebar-resize-half"
+  },
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.125.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-sidebar-resize-half.resize",
+        "title": "Toggle Primary Sidebar Half Width",
+        "category": "Sidebar"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscode-sidebar-resize-half.resize",
+        "key": "ctrl+alt+b",
+        "mac": "ctrl+alt+b"
+      }
+    ],
+    "configuration": {
+      "title": "Sidebar Resize Half",
+      "properties": {
+        "sidebarResizeHalf.resizeSteps": {
+          "type": "integer",
+          "default": 7,
+          "minimum": 1,
+          "maximum": 30,
+          "description": "Fallback number of approximately 60-pixel increments to use when the window width cannot be read."
+        },
+        "sidebarResizeHalf.minimumSidebarWidth": {
+          "type": "integer",
+          "default": 170,
+          "minimum": 100,
+          "maximum": 500,
+          "description": "Assumed minimum primary sidebar width in logical pixels, used to calculate half of the current macOS window width."
+        },
+        "sidebarResizeHalf.compactSizeMultiplier": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 6,
+          "description": "Compact sidebar width as a multiple of the assumed minimum width."
+        },
+        "sidebarResizeHalf.maximumSidebarRatio": {
+          "type": "number",
+          "default": 0.45,
+          "minimum": 0.2,
+          "maximum": 0.49,
+          "description": "Maximum fraction of the macOS window width used for the sidebar, ensuring the editor remains wider."
+        },
+        "sidebarResizeHalf.smoothResize": {
+          "type": "boolean",
+          "default": false,
+          "description": "Animate the sidebar resize step-by-step. When disabled, the sidebar jumps directly to the target size."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "package": "vsce package",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/vscode": "^1.125.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^3.9.2",
+    "eslint": "^10.5.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "overrides": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  }
+}
