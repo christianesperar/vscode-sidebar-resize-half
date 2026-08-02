@@ -15,6 +15,8 @@ Run **Sidebar: Toggle Primary Sidebar Half Width** from the Command Palette, or 
 
 On the first press, the command reads the frontmost VS Code window width, focuses and minimizes the primary sidebar, then grows it to no more than 45% of the window. Press it again to resize the sidebar to about twice its minimum width. Both targets are capped so the editor remains wider. It works whether the sidebar is positioned on the left or right.
 
+Every press recalibrates from the minimum width, so sizing stays exact even after you drag the sidebar sash with the mouse. Because VS Code only exposes relative resize steps and no way to read the current sidebar width, this recalibration briefly passes through the minimum width — a small amount of visual movement is unavoidable with a pure VS Code implementation.
+
 The first use may ask for Automation or Accessibility permission. Enable Visual Studio Code under **System Settings > Privacy & Security** if macOS blocks the window-size query.
 
 ## Settings
@@ -30,7 +32,8 @@ VS Code does not expose native workbench mouse events to extensions, so an exten
 
 This extension therefore provides the supported command and keyboard shortcut above. Exact native-sidebar double-click behavior will require VS Code to add a public workbench API.
 
+Additionally, when a webview (e.g. an AI chat panel like Cline) has keyboard focus, it captures all keystrokes, so the `Ctrl+Option+B` / `Ctrl+Alt+B` keybinding will not reach the workbench. This is a VS Code platform limitation — only the webview's own extension can opt a command into its `commandsToSkipShell` list. Move focus out of the webview first (e.g. `Cmd+1` to focus the editor) before pressing the shortcut.
+
 ## Development
 
 Press `F5` to launch an Extension Development Host. Run `npm test` to compile, lint, and execute the extension test suite.
-

@@ -6,6 +6,14 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 
 ## [Unreleased]
 
+## [0.0.9]
+
+- Fixed the toggle-back resize overshooting the editor.
+- Cached the macOS window width so the resize starts instantly; the Automation permission warning now appears only once per session.
+- Documented the webview keybinding limitation (e.g. Cline panels capture all keystrokes).
+
+## [0.0.8]
+
 - Disabled resize animation by default; added `smoothResize` setting to opt back in.
 - Changed shortcut to `Ctrl+Option+B` (B for Bar/sidebar).
 - Changed the compact toggle target to twice the minimum sidebar width.

@@ -19,7 +19,7 @@ export function getTargetResizeSteps(isHalfWidth: boolean, halfWidthSteps: numbe
 	return isHalfWidth ? Math.min(compactSteps, halfWidthSteps) : halfWidthSteps;
 }
 
-async function getMacOsFrontWindowWidth(): Promise<number> {
+async function queryMacOsFrontWindowWidth(): Promise<number> {
 	const script = `
 tell application "System Events"
 	set frontProcess to first application process whose frontmost is true
@@ -36,6 +36,22 @@ end tell`;
 	return width;
 }
 
+let cachedWindowWidth: number | undefined;
+let warnedAboutWindowAccess = false;
+
+function refreshCachedWindowWidth(): void {
+	if (process.platform !== 'darwin') {
+		return;
+	}
+	void queryMacOsFrontWindowWidth()
+		.then((width) => {
+			cachedWindowWidth = width;
+		})
+		.catch(() => {
+			// Ignore background refresh failures.
+		});
+}
+
 async function getResizeSteps(
 	configuration: vscode.WorkspaceConfiguration,
 	minimumSidebarWidth: number,
@@ -47,20 +63,59 @@ async function getResizeSteps(
 	}
 
 	try {
-		const windowWidth = await getMacOsFrontWindowWidth();
+		// Use the cached width when available so the resize starts instantly.
+		let windowWidth = cachedWindowWidth;
+		if (windowWidth === undefined) {
+			windowWidth = await queryMacOsFrontWindowWidth();
+			cachedWindowWidth = windowWidth;
+		}
 		const maximumSidebarRatio = configuration.get<number>('maximumSidebarRatio', 0.45);
 		return calculateResizeSteps(windowWidth, minimumSidebarWidth, maximumSidebarRatio);
 	} catch {
-		void vscode.window.showWarningMessage(
-			'Could not read the VS Code window size. Allow Automation or Accessibility access for Visual Studio Code in System Settings. Using the configured fallback size.',
-		);
+		if (!warnedAboutWindowAccess) {
+			warnedAboutWindowAccess = true;
+			void vscode.window.showWarningMessage(
+				'Could not read the VS Code window size. Allow Automation or Accessibility access for Visual Studio Code in System Settings. Using the configured fallback size.',
+			);
+		}
 		return fallbackSteps;
 	}
+}
+
+async function runResizeSteps(command: 'workbench.action.increaseViewSize' | 'workbench.action.decreaseViewSize', steps: number, smooth: boolean): Promise<void> {
+	if (steps <= 0) {
+		return;
+	}
+
+	if (smooth) {
+		for (let step = 0; step < steps; step += 1) {
+			await vscode.commands.executeCommand(command);
+		}
+		return;
+	}
+
+	// Fire all steps at once but await every one of them, so no step is lost
+	// and the final size is guaranteed before the command returns.
+	const promises: Thenable<unknown>[] = [];
+	for (let step = 0; step < steps; step += 1) {
+		promises.push(vscode.commands.executeCommand(command));
+	}
+	await Promise.all(promises);
 }
 
 export function activate(context: vscode.ExtensionContext) {
 	let isHalfWidth = false;
 	let wideResizeSteps = 0;
+
+	// Warm the cache so the first keypress does not pay the AppleScript cost.
+	refreshCachedWindowWidth();
+	context.subscriptions.push(
+		vscode.window.onDidChangeWindowState((state) => {
+			if (state.focused) {
+				refreshCachedWindowWidth();
+			}
+		}),
+	);
 
 	const disposable = vscode.commands.registerCommand(resizeCommandId, async () => {
 		const configuration = vscode.workspace.getConfiguration('sidebarResizeHalf');
@@ -74,27 +129,16 @@ export function activate(context: vscode.ExtensionContext) {
 				wideResizeSteps = await getResizeSteps(configuration, minimumSidebarWidth);
 			}
 
-			const resizeSteps = getTargetResizeSteps(isHalfWidth, wideResizeSteps, compactSteps);
+			const targetSteps = getTargetResizeSteps(isHalfWidth, wideResizeSteps, compactSteps);
 			await vscode.commands.executeCommand('workbench.action.focusSideBar');
 
-			if (smoothResize) {
-				for (let step = 0; step < resetSteps; step += 1) {
-					await vscode.commands.executeCommand('workbench.action.decreaseViewSize');
-				}
-
-				for (let step = 0; step < resizeSteps; step += 1) {
-					await vscode.commands.executeCommand('workbench.action.increaseViewSize');
-				}
-			} else {
-				const promises: Thenable<unknown>[] = [];
-				for (let step = 0; step < resetSteps; step += 1) {
-					promises.push(vscode.commands.executeCommand('workbench.action.decreaseViewSize'));
-				}
-				for (let step = 0; step < resizeSteps; step += 1) {
-					promises.push(vscode.commands.executeCommand('workbench.action.increaseViewSize'));
-				}
-				await Promise.all(promises);
-			}
+			// VS Code exposes only relative resize steps and no way to read the
+			// current sidebar width, so the only way to guarantee the target size
+			// is to recalibrate: shrink to the minimum (extra steps are no-ops
+			// once there), then grow to the target. Tracking the width instead
+			// breaks whenever the user drags the sash with the mouse.
+			await runResizeSteps('workbench.action.decreaseViewSize', resetSteps, smoothResize);
+			await runResizeSteps('workbench.action.increaseViewSize', targetSteps, smoothResize);
 
 			isHalfWidth = !isHalfWidth;
 		} catch (error) {
